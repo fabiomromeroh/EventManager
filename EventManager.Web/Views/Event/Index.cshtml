@@ -1,0 +1,116 @@
+﻿@model List<EventManager.Entity.Event>
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Events</h2>
+<div class="row">
+    <div class="">
+        <div class="col-md-3">
+            <label for="fromDate" class="control-label">
+                Date From
+                @Html.JQueryUI().Datepicker("fromDate")
+            </label>
+        </div>
+        <div class="col-md-3">
+            <label for="toDate" class="control-label">
+                Date To
+                @Html.JQueryUI().Datepicker("toDate")
+            </label>
+        </div>
+        <div class="col-md-1" style="top: 20px;">
+            <a class="btn btn-warning" id="searchBtn">Search</a>
+        </div>
+    </div>
+
+</div>
+<div class="row pull-right" style="padding:5px;">
+    <a class="btn btn-primary" href="/Event/New">New</a>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-responsive table-hover">
+            <thead>
+                <tr>
+                    <th hidden>ID</th>
+                    <th>Name</th>
+                    <th>Description</th>
+                    <th>Start Date</th>
+                    <th>Finish Date</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="dataBody">
+                @foreach (var e in Model)
+                {
+                    <tr>
+                        <td hidden>@e.ID</td>
+                        <td>@e.Name</td>
+                        <td>@e.Description</td>
+                        <td>@e.StartDate.Date.ToString("dd/MM/yyyy")</td>
+                        <td>@e.EndDate.Date.ToString("dd/MM/yyyy")</td>
+                        <td><a href="/Event/Edit/@e.ID" class="btn btn-success">Edit</a>  <a href="/Event/Delete/@e.ID" class="btn btn-danger">Delete</a></td>
+                    </tr>
+                }
+            </tbody>
+            
+        </table>
+    </div>
+
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#fromDate").addClass("form-control");
+            $("#toDate").addClass("form-control");
+            $(document).on('focus', ':input', function () {
+                $(this).attr('autocomplete', 'off');
+            });
+        });
+
+        $("#searchBtn").click(function () {
+            var fromDate = $("#fromDate").val();
+            var toDate = $("#toDate").val();
+            //if (fromDate == "" || toDate == "")
+            //    return;
+            var body = $("#dataBody");
+            body.html("");
+            $.ajax({
+                type: "get",
+                url: "/Event/Search?fromDate=" + fromDate + "&toDate=" + toDate,
+                datatype: "application/json",
+                contentType: "text/plain",
+                success: function (events) {
+                    if (events.length == 0)
+                        body.append("<tr style='color:red'> <td colspan='3'> No Match Data</td></tr>");
+                    else
+                        $.each(events, function (index, value) {
+                            var data = "<tr>" +
+                                "<td hidden>" + value.ID + "</td>" +
+                                "<td>" + value.Name + "</td>" +
+                                "<td>" + value.Description + "</td>" +
+                                "<td>" + ToJavaScriptDate(value.StartDate) + "</td>" +
+                                "<td>" + ToJavaScriptDate(value.EndDate) + "</td>" +
+                                "<td><a href='/Event/Edit/" + value.ID + "' class='btn btn-success'>Edit</a>  <a href='/Event/Delete/" + value.ID + "' class='btn btn-danger'>Delete</a></td>" +
+                                "</tr>"
+                            body.append(data);
+                        });
+                }
+            })
+        });
+        
+
+            function ToJavaScriptDate(value) {
+                var pattern = /Date\(([^)]+)\)/;
+                var results = pattern.exec(value);
+                var dt = new Date(parseFloat(results[1]));
+                return dt.getDate() + "/" + (dt.getMonth() + 1) + "/" + dt.getFullYear();
+            }
+
+
+    </script>
+
+}
+
